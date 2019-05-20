@@ -63,6 +63,21 @@
 
 [Спецификация требований](srs_preview.pdf) 
 
+## RTSL:
+
+В качестве маяков будут использоваться photon.
+
+[Ссылка на документацию](https://docs.particle.io/reference/device-os/firmware/photon/)
+
+Определение дистанции будет состоять из определения дистанции через bluetooth и wifi.
+
+Для определения растояния можно воспользоваться: [формулой](https://en.wikipedia.org/wiki/Free-space_path_loss)
+
+Материалы по теме:
+
+* [Location in google](https://www.codeproject.com/Articles/63747/Exploring-GoogleGears-Wi-Fi-Geo-Locator-Secrets)
+* 
+
 ## Прочее:
 
 [Системы отслеживания](https://en.wikipedia.org/wiki/Tracking_system)
