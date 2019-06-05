@@ -28,6 +28,11 @@ class DispatcherReqHandler:
     async def notify_all(self, data):
         for listener in self.listeners:
             await listener(data)
+    async def raise_warning(self, security_id, route_id, time):
+        print("Get warning at {}".format(time))
+        await self.notify_all({'header' : 'raise_warning', 'data' : {"security_id" : security_id,
+                               "route_id"    : route_id,
+                               "time"        : time}})
             
     async def handle(self, req):
         header = req["header"]
@@ -140,9 +145,3 @@ class DispatcherReqHandler:
         for visited_check_point in visited_check_points:
             visited_check_point['check_in_time'] = str(visited_check_point['check_in_time'])
         return {"points" : visited_check_points}
-    
-    async def raise_warning(self, security_id, route_id, time):
-        print("Get warning at {}".format(time))
-        await self.notify_all({"security_id" : security_id,
-                               "route_id"    : route_id,
-                               "time"        : time})

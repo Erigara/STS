@@ -6,10 +6,8 @@ Created on Sat Apr 13 20:35:35 2019
 @author: erigara
 """
 
-import math
 import numpy as np
 import server.database.db_module as db_module
-
 class RTSLReqHandler:
     async def create(db):
         self = RTSLReqHandler()
@@ -42,8 +40,8 @@ class RTSLReqHandler:
         security_id = userID
         position = await self.find_position(signals)
         print(position)
-        #check_points = await self.map_check_points(position)
-        #await self.save_check_points(security_id, time, check_points)
+        check_points = await self.map_check_points(position)
+        await self.save_check_points(security_id, time, check_points)
         await self.push_position(security_id, position, time)
         return security_id, time, position
     
@@ -215,5 +213,5 @@ class RTSLReqHandler:
         """
         for check_point in check_points:
             await self.db.insert_record("MovmentHistory", 
-                                        ["security_id", "check_point_id", "check_in_time"], 
-                                        [security_id, check_point["check_point_id"], '"'+time+'"'])
+                                        {"security_id" : security_id, "check_point_id" : check_point["check_point_id"], "check_in_time" : time}
+                                        )
