@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8"/>
+    <title>STS: monitoring</title>
+    <link rel="stylesheet" href="./pagestyle.css">
+    <link rel="stylesheet" href="./popup.css">
+    <link href="https://unpkg.com/tabulator-tables@4.2.7/dist/css/tabulator.min.css" rel="stylesheet">
+    <script src="https://d3js.org/d3.v5.min.js"></script>
+    <script src="scripts/jquery-3.4.1.min.js"></script>
+    <script type="text/javascript" src="https://unpkg.com/tabulator-tables@4.2.7/dist/js/tabulator.min.js"></script>
+    <script src="scripts/wsocket.js"></script>
+    <script src="scripts/cookie-utils.js"></script>
+    <script src="scripts/modal-utils.js"></script>
+  </head>
+  <body>
+    <header>
+      <div class="flex-container">
+          <div><button onclick="showEditModal()" class="longButton">Управление данными</button></div>
+          <div><button onclick="showRegisterModal()" class="longButton">Добавить пользователя</button></div>
+          <div><form id="loginForm"><button id="loginButton" type='submit' class="longButton">Войти в систему</button></form></div>
+      </div>
+    </header>
+    <div class="wrapper">
+      <div id="overlay">
+        <div class='alert-warning'>
+          Для использования функций системы, пожалуйста, авторизируйтесь.
+        </div>
+      </div>
+      <div class="flex-container">
+        <script src="scripts/monitoring.js"></script>
+        <div id="monitoring"></div>
+        <div class="toolbar">
+          <button onclick="clearSVG()" class="longButton">Очистить</button>
+          <button onclick="" class="longButton">Настройки</button>
+          <script src="scripts/notifications.js"></script>
+          <div id="notificationTray"></div>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- The Modal  Окно управления данными -->
+    <div id="editModal" class="modal">
+      <span onclick="document.getElementById('editModal').style.display='none'"
+    class="close" title="Close Modal">&times;</span>
+
+      <!-- Modal Content -->
+      <form class="modal-content" id='editModalContent'>
+        <div class="container">
+          <span>
+           <label for="ddlTableSelect"><b>Выберите таблицу: </b></label>
+            <select id="ddlTableSelect">
+              <option value="Object" selected="selected">Охраняемые объекты</option>
+              <option value="MovmentHistory" >История перемещений</option>
+              <option value="CheckPoint">Контрольные точки</option>
+              <option value="RoutePoint">Маршруты</option>
+              <option value="SecurityStaff">Сотрудники Охраны</option>
+              <option value="DispatcherStaff">Диспетчеры</option>
+              <option value="Sensor">Датчики</option>
+            </select>
+          </span>
+          <button type="submit" class="longButton">Загрузить</button>
+        </div>
+        <div id="dataTable"></div>
+        <div id="toolbarTable" class="container">
+          <button type="button" id="deleteRowButton" onclick="addRow()">Добавить запись</button>
+          <button type="button" id="deleteRowButton" >Применить изменения</button>
+          <button type="button" id="deleteRowButton" onclick="deleteSelectedRows()">Удалить отмеченные записи</button>
+        </div>
+      </form>
+      <script src="scripts/edit-data.js"></script>
+    </div>
+
+    <!-- The Modal  Окно регистрации пользователя-->
+    <div id="registerModal" class="modal">
+      <span onclick="document.getElementById('registerModal').style.display='none'"
+    class="close" title="Close Modal">&times;</span>
+
+      <!-- Modal Content -->
+      <form class="modal-content" id='registerModalContent'>
+        <div class="imgcontainer">
+          <img src="avatar.png" alt="Avatar" class="avatar">
+        </div>
+
+        <div class="container">
+          <label for="login"><b>Имя пользователя:</b></label>
+          <input type="text" placeholder="Enter Username" name="login" required>
+
+          <label for="password"><b>Пароль:</b></label>
+          <input type="password" placeholder="Enter Password" name="password" required>
+
+          <label>
+            <input type="checkbox" checked="checked" name="admin" value="on"> С правами администратора?
+          </label>
+          <button type="submit" class="longButton">Зарегистрировать</button>
+        </div>
+        <div class="container" style="background-color:#f1f1f1">
+          <button type="button" onclick="document.getElementById('registerModal').style.display='none'" class="cancelbtn">Отмена</button>
+        </div>
+      </form>
+      <script src="scripts/register.js"></script>
+    </div>
+
+    <!-- The Modal  Окно авторизации-->
+    <div id="loginModal" class="modal">
+      <span onclick="document.getElementById('loginModal').style.display='none'"
+    class="close" title="Close Modal">&times;</span>
+
+      <!-- Modal Content -->
+      <form class="modal-content" id='loginModalContent'>
+        <div class="imgcontainer">
+          <img src="avatar.png" alt="Avatar" class="avatar">
+        </div>
+
+        <div class="container">
+          <label for="login"><b>Имя пользователя:</b></label>
+          <input type="text" placeholder="Enter Username" name="login" required>
+
+          <label for="password"><b>Пароль:</b></label>
+          <input type="password" placeholder="Enter Password" name="password" required>
+          <button type="submit" class="longButton">Войти</button>
+        </div>
+        <div class="container" style="background-color:#f1f1f1">
+          <button type="button" onclick="document.getElementById('loginModal').style.display='none'" class="cancelbtn">Отмена</button>
+        </div>
+      </form>
+      <script src="scripts/login.js"></script>
+    </div>
+
+    <footer>
+    </footer>
+  </body>
+</html>
