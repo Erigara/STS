@@ -41,7 +41,7 @@ class RTSLReqHandler:
         position = await self.find_position(signals)
         print(position)
         check_points = await self.map_check_points(position)
-        await self.save_check_points(security_id, time, check_points)
+        #await self.save_check_points(security_id, time, check_points)
         await self.push_position(security_id, position, time)
         return security_id, time, position
     
@@ -85,7 +85,9 @@ class RTSLReqHandler:
             rssi = signals[sensor_id]
             x, y = await self.get_sensor_coords(sensor_id)
             benchmark_rssi = await self.get_benchmark_rssi(sensor_id)
+            benchmark_rssi_std = await self.get_benchmark_rssi_std(sensor_id)
             dist = await self.find_distance(rssi, benchmark_rssi)
+            print('{} position {} dist {} m'.format(sensor_id, (x,y),dist))
             coords.append(np.array((x, y)).reshape(2,1))
             distances.append(dist)
         pos = await self.multilateration(coords, distances)
@@ -126,7 +128,7 @@ class RTSLReqHandler:
         """
         return pos
     
-    async def get_sensor_coords(self, sensor_id):
+    async def get_sensor_coords(self, mac_address):
         """
         Запрос координат устройства из базы по данному id.
         
@@ -137,8 +139,8 @@ class RTSLReqHandler:
                                         .add_where(condition)
                                         .execute(table="Sensor", 
                                                  columns=["x", "y"],
-                                                 data=["sensor_id", 
-                                                 '"{}"'.format(sensor_id)]))
+                                                 data=["mac_address", 
+                                                 '"{}"'.format(mac_address)]))
         if result:
             sensor_coords = result[0]
             x = float(sensor_coords["x"])
@@ -147,26 +149,45 @@ class RTSLReqHandler:
              raise UserWarning((0, "Sensor not found"))
         return x, y
     
-    async def get_benchmark_rssi(self, sensor_id):
+    async def get_benchmark_rssi(self, mac_address):
         """
         Запрос эталонного rssi из базы по данному id.
         
-        return benchmark_rssi : int
+        return benchmark_rssi : float
         """
         condition = "{} = {}"
         result = await (db_module.ReadRecord(self.db)
                                         .add_where(condition)
                                         .execute(table="Sensor", 
                                                  columns=["benchmark_rssi",],
-                                                 data=["sensor_id", 
-                                                       '"{}"'.format(sensor_id)]))
+                                                 data=["mac_address", 
+                                                       '"{}"'.format(mac_address)]))
         if result:
             benchmark_rssi = result[0]["benchmark_rssi"]
         else: 
             raise UserWarning((0, "Sensor not found"))
         return benchmark_rssi
     
-    async def find_distance(self, rssi, benchmark_rssi):
+    async def get_benchmark_rssi_std(self, mac_address):
+        """
+        Запрос эталонного rssi из базы по данному id.
+        
+        return benchmark_rssi_std : float
+        """
+        condition = "{} = {}"
+        result = await (db_module.ReadRecord(self.db)
+                                        .add_where(condition)
+                                        .execute(table="Sensor", 
+                                                 columns=["benchmark_rssi_std",],
+                                                 data=["mac_address", 
+                                                       '"{}"'.format(mac_address)]))
+        if result:
+            benchmark_rssi = result[0]["benchmark_rssi_std"]
+        else: 
+            raise UserWarning((0, "Sensor not found"))
+        return benchmark_rssi
+    
+    async def find_distance(self, rssi, benchmark_rssi, benchmark_rssi_std=None):
         """
         Находит расстояние от устройства до датчика на основе формулы передачи Фрииса.
         rssi : int  - уровень сингала
@@ -174,10 +195,16 @@ class RTSLReqHandler:
         
         return dist : float
         """
-        n = 2
-        benchmark_dist = 1
-        delta_rssi = rssi - benchmark_rssi
-        dist = benchmark_dist*10**(-delta_rssi/(10*n))
+        if benchmark_rssi_std:
+            n = 0.5
+            benchmark_dist = 1
+            delta_rssi = rssi - benchmark_rssi
+            dist = benchmark_dist*10**(-(benchmark_rssi_std + delta_rssi)/(10*n))
+        else:
+            n = 0.94
+            benchmark_dist = 1
+            delta_rssi = rssi - benchmark_rssi
+            dist = benchmark_dist*10**(-delta_rssi/(10*n))
         return dist
     
     async def  multilateration(self, coords, distances):

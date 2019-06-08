@@ -68,7 +68,6 @@ class STSDataBase:
                     
                     await cur.execute(req)
                     await conn.commit()
-                    print(await cur.fetchall())
                 
     async def delete_record(self, table, row):
         """
@@ -108,7 +107,6 @@ class STSDataBase:
                           """.format(table, condition)
                     await cur.execute(req)
                     await conn.commit()
-                    print(await cur.fetchall())
                 
     async def update_record(self, table, row):
         """
@@ -118,19 +116,23 @@ class STSDataBase:
         """
         async with self.pool.acquire() as conn:
             eq = "{} = {!r}"
-            pkey = self.findPkey(row)
+            pkey = await self.findPkey(table)
             condition =  "{} = {!r}".format(pkey, row[pkey]).replace("'", '"')
-            updatedRow = " , ".join([eq.format(key, row[key]).replace("'", '"')  for key in row if (row[key] != "None" and row[key] != "")])
+            updatedRow = " , ".join([eq.format(key, row[key]).replace("'", '"')  for key in row if (row[key] != "None" and row[key] != "" and key != pkey)])
             async with conn.cursor(aiomysql.DictCursor) as cur:
                 req = """
-                      Update  table {} set {} where {}
+                      Update {} set {} where {}
                       """.format(table, updatedRow, condition)
                 await cur.execute(req)
                 await conn.commit()
-                print(await cur.fetchall())
                 
     
-    def findPkey(self, row):
-        for key in row:
-            if "_id" in key:
-                return key
+    async def findPkey(self, table):
+        async with self.pool.acquire() as conn:
+            async with conn.cursor(aiomysql.DictCursor) as cur:
+                req = """
+                      SHOW KEYS FROM {} WHERE Key_name = 'PRIMARY'
+                      """.format(table)
+                await cur.execute(req)
+                answer = (await cur.fetchone())["Column_name"]
+                return answer

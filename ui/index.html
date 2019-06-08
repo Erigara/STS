@@ -32,7 +32,6 @@
         <div id="monitoring"></div>
         <div class="toolbar">
           <button onclick="clearSVG()" class="longButton">Очистить</button>
-          <button onclick="" class="longButton">Настройки</button>
           <script src="scripts/notifications.js"></script>
           <div id="notificationTray"></div>
         </div>
@@ -54,7 +53,8 @@
               <option value="Object" selected="selected">Охраняемые объекты</option>
               <option value="MovmentHistory" >История перемещений</option>
               <option value="CheckPoint">Контрольные точки</option>
-              <option value="RoutePoint">Маршруты</option>
+              <option value="Route">Маршруты</option>
+              <option value="RoutePoint">Маршрутные точки</option>
               <option value="SecurityStaff">Сотрудники Охраны</option>
               <option value="DispatcherStaff">Диспетчеры</option>
               <option value="Sensor">Датчики</option>
@@ -63,13 +63,17 @@
           <button type="submit" class="longButton">Загрузить</button>
         </div>
         <div id="dataTable"></div>
+        <div id="addTable"></div>
         <div id="toolbarTable" class="container">
           <button type="button" id="deleteRowButton" onclick="addRow()">Добавить запись</button>
-          <button type="button" id="deleteRowButton" >Применить изменения</button>
+          <button type="button" id="deleteRowButton" onclick="clearAddRow()">Очистить поле ввода</button>
           <button type="button" id="deleteRowButton" onclick="deleteSelectedRows()">Удалить отмеченные записи</button>
         </div>
       </form>
       <script src="scripts/edit-data.js"></script>
+      <script src="scripts/table-creation.js"></script>
+      <script src="scripts/validators.js"></script>
+      <script src="scripts/smart-selector.js"></script>
     </div>
 
     <!-- The Modal  Окно регистрации пользователя-->

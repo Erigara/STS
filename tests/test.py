@@ -15,8 +15,8 @@ from time import sleep
 
 def find_dist(x,y, id_):
     sensor_coords = {
-                "1:1" : (0,0), "1:2" : (10,0), "1:3" : (0,5),
-                "2:1" : (10, 5), "2:2" : (10,0), "2:3" : (0, 5)
+                "5e:cf:7f:f2:65:4e" : (0,4), "5e:cf:7f:f2:66:25" : (0,0), "5e:cf:7f:f2:6c:bf" : (3,0),
+                "98:D3:32:11:32:1A" : (0, 4), "98:D3:32:11:32:3D" : (3,0), "98:D3:32:31:2B:90" : (0, 0)
             }
     x_, y_ = sensor_coords[id_]
     return ((x-x_)**2+(y-y_)**2)**0.5
@@ -28,7 +28,7 @@ def dist_to_rssi(dist, benchmark_rssi):
 url = 'http://0.0.0.0:9000/rtsl'    
 
 
-X = np.linspace(0.01, 9.99, 100)
+X = np.linspace(0.01, 3, 100)
 Y = -0.2*X*(X-10)
 
 for (x,y) in zip(X, Y):
@@ -38,12 +38,12 @@ for (x,y) in zip(X, Y):
                         "userID"    : 1, 
                         "time"      : str(datetime.now()), 
                         "signals"   : {
-                                        "wifi"      : {"1:1" : dist_to_rssi(find_dist(x,y, "1:1"), -40)+random.randint(0,1), 
-                                                       "1:2" : dist_to_rssi(find_dist(x,y, "1:2"), -40)+random.randint(0,1), 
-                                                       "1:3" : dist_to_rssi(find_dist(x,y,"1:3"), -40)+random.randint(0,1)}, 
-                                        "bluetooth" : {"2:1" : dist_to_rssi(find_dist(x,y, "2:1"), -60)+random.randint(0,1), 
-                                                       "2:2" : dist_to_rssi(find_dist(x,y, "2:2"), -60)+random.randint(0,1), 
-                                                       "2:3" : dist_to_rssi(find_dist(x,y, "2:3"), -60)+random.randint(0,1)}
+                                        "wifi"      : {"5e:cf:7f:f2:65:4e" : dist_to_rssi(find_dist(x,y, "5e:cf:7f:f2:65:4e"), -40)+random.randint(0,1), 
+                                                       "5e:cf:7f:f2:66:25" : dist_to_rssi(find_dist(x,y, "5e:cf:7f:f2:66:25"), -40)+random.randint(0,1), 
+                                                       "5e:cf:7f:f2:6c:bf" : dist_to_rssi(find_dist(x,y,"5e:cf:7f:f2:6c:bf"), -40)+random.randint(0,1)}, 
+                                        "bluetooth" : {"98:D3:32:11:32:1A" : dist_to_rssi(find_dist(x,y, "98:D3:32:11:32:1A"), -60)+random.randint(0,1), 
+                                                       "98:D3:32:11:32:3D": dist_to_rssi(find_dist(x,y, "98:D3:32:11:32:3D"), -60)+random.randint(0,1), 
+                                                       "98:D3:32:31:2B:90" : dist_to_rssi(find_dist(x,y, "98:D3:32:31:2B:90"), -60)+random.randint(0,1)}
                                         }
                         }
             }

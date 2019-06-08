@@ -28,8 +28,6 @@ def create_plot():
 
 def update_plot(x,y, time):
     plt.scatter(x,y)    
-    #if x and y:
-        #plt.annotate(time, (x[0],y[0]))
     plt.draw()
     plt.pause(.001)
     

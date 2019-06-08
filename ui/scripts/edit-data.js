@@ -1,4 +1,5 @@
 var contentTable;
+var addTable;
 var tableName;
 
 function showEditModal() {
@@ -42,6 +43,9 @@ $("#editModalContent").on( "submit", function(event) {
         case "RoutePoint":
             contentTable = createTableRoutepoint(data);
             break;
+        case "Route":
+            contentTable = createTableRoute(data);
+            break;
         default:
 
       }
@@ -61,6 +65,7 @@ function createTable(tabledata, columns){
     elem.headerFilter="input";
   });
   var table = new Tabulator("#dataTable", {
+    cellEdited: updateRow,
     selectable:true,
     selectablePersistence:false,
   	data:tabledata,           //load row data from array
@@ -78,6 +83,23 @@ function createTable(tabledata, columns){
   return table;
 }
 
+function createAddTable(columns){
+  var table = new Tabulator("#addTable", {
+    selectablePersistence:false,
+  	layout:"fitColumns",      //fit columns to width of table
+  	responsiveLayout:"hide",  //hide columns that dont fit on the table
+  	tooltips:true,            //show tool tips on cells
+  	addRowPos:"top",          //when adding a new row, add it to the top of the table
+  	history:false,             //allow undo and redo actions on the table
+  	movableColumns:true,      //allow column order to be changed
+  	resizableRows:true,       //allow row order to be changed
+  	columns: columns          //define the table columns
+  });
+  table.addRow({});
+  addTable = table;
+  return table;
+}
+
 function findByField(columns, field) {
   var column = {};
   columns.forEach(function(elm, index, array) {
@@ -89,101 +111,6 @@ function findByField(columns, field) {
   return column;
 }
 
-function createTableSecurity(data){
-  tabledata = data.tabledata;
-  columns = data.columns;
-  var name = findByField(columns, 'name');
-  name.editor = true;
-  var object_id = findByField(columns, 'object_id')
-  object_id.editor = "select";
-  object_id.editorParams= {values:["None",]};
-  return createTable(tabledata, columns);
-}
-
-function createTableDispatcher(data){
-  tabledata = data.tabledata;
-  columns = data.columns;
-  var name = findByField(columns, 'name');
-  name.editor = true;
-  var object_id = findByField(columns, 'object_id')
-  object_id.editor = "select";
-  object_id.editorParams= {values:["None",]};
-  return createTable(tabledata, columns);
-}
-
-function createTableCheckpoint(data){
-  tabledata = data.tabledata;
-  columns = data.columns;
-  var x = findByField(columns, 'x');
-  x.editor = true;
-  x.validator = "float";
-  var y = findByField(columns, 'y');
-  y.editor = true;
-  y.validator = "float";
-  var radius = findByField(columns, 'radius');
-  radius.editor = true;
-  radius.validator = "float";
-  return createTable(tabledata, columns);
-}
-
-function createTableMovmenthistory(data){
-  tabledata = data.tabledata;
-  columns = data.columns;
-  return createTable(tabledata, columns);
-}
-
-function createTableSensor(data){
-  tabledata = data.tabledata;
-  columns = data.columns;
-  var sensor_id = findByField(columns, 'sensor_id');
-  sensor_id.editor = true;
-  sensor_id.validator = ["required", "regex:^[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}$"];
-  var x = findByField(columns, 'x');
-  x.editor = true;
-  x.validator = "float";
-  var y = findByField(columns, 'y');
-  y.editor = true;
-  y.validator = "float";
-  var benchmark_rssi = findByField(columns, 'benchmark_rssi');
-  benchmark_rssi.editor = true;
-  benchmark_rssi.validator = "float";
-  return createTable(tabledata, columns);
-}
-
-function createTableObject(data){
-    tabledata = data.tabledata;
-    columns = data.columns;
-    var address = findByField(columns, 'address');
-    address.editor = true;
-    address.validator = "string";
-    return createTable(tabledata, columns);
-}
-
-function createTableRoutepoint(data) {
-  tabledata = data.tabledata;
-  columns = data.columns;
-
-  var check_point_id = findByField(columns, 'check_point_id');
-  check_point_id.editor = "select";
-  check_point_id.editorParams = {'values' : ["None",]};
-  check_point_id.validator = "required";
-  function validateTime(cell, value, parameters) {
-    var isValid = /^([0-1]?[0-9]|2[0-4]):([0-5][0-9])(:[0-5][0-9](\.[0-9]+)?)?$/.test(value);
-    return isValid;
-  }
-  var begin_time = findByField(columns, 'begin_time');
-  begin_time.editor = true;
-  begin_time.validator = ["required", { type : validateTime, parameters:{}}];
-
-  var end_time = findByField(columns, 'end_time');
-  end_time.editor = true;
-  end_time.validator = ["required", { type : validateTime, parameters:{}}];
-  return createTable(tabledata, columns);
-}
-
-function addRow() {
-  contentTable.addRow({});
-}
 function deleteSelectedRows() {
   var selectedRows = contentTable.getSelectedRows();
   var selectedData = contentTable.getSelectedData();
@@ -202,4 +129,61 @@ function deleteSelectedRows() {
       console.log(error);
   });
   wsocket.sendRequest('delete_data', {'table' : tableName, 'rows' : selectedData});
+}
+
+function updateRow(row){
+  var rowData = row.getData();
+  wsocket.promiseSubscribe("modify_data").then(
+    function(data){
+        if (data.success) {
+          showSuccAuthNotify('editModalContent', 'Данные успешно обновлены');
+        }
+        else {
+          showWrongAuthWarning('editModalContent', 'Произошла ошибка при обновлении данных');
+        }
+    },
+    function(error) {
+      console.log(error);
+  });
+  wsocket.sendRequest('modify_data', {'table' : tableName, 'row' : rowData});
+}
+
+function addRow() {
+  let row = addTable.getRows()[0];
+  let rowData = row.getData();
+  let isValid = true;
+  // не учитывает незаполняемые поля id;
+  let i = 0;
+  for (key in rowData) {
+      if(!rowData[key] && i != 0) {
+          isValid = false;
+      }
+      i += 1;
+  }
+  if(isValid) {
+    wsocket.promiseSubscribe("add_data").then(
+      function(data){
+          if (data.success) {
+            clearAddRow();
+            contentTable.addRow(data.row);
+            showSuccAuthNotify('editModalContent', 'Данные успешно добавлены');
+          }
+          else {
+            showWrongAuthWarning('editModalContent', 'Произошла ошибка при добавлении данных');
+          }
+      },
+      function(error) {
+        console.log(error);
+    });
+    wsocket.sendRequest('add_data', {'table' : tableName, 'row' : rowData});
+  }
+  else {
+    showWrongAuthWarning('editModalContent', 'Указаны некорректные данные');
+  }
+}
+
+function clearAddRow() {
+  let row = addTable.getRows()[0];
+  row.delete();
+  addTable.addRow({});
 }

@@ -66,6 +66,7 @@ def main():
         print("device {} have dev {} bt rssi".format(bt, dev_bt_rssi))
         print("-----------------------------------------------------------")
         create_hist(bt, server.rssi_bt[bt], std_bt_rssi, mean_bt_rssi, median_bt_rssi)
+        np.save(bt, server.rssi_bt[bt])
     for wf in server.rssi_wf:
         median_wf_rssi = np.median(np.array(server.rssi_wf[wf]))
         mean_wf_rssi= np.mean(np.array(server.rssi_wf[wf]))
@@ -78,5 +79,6 @@ def main():
         print("device {} have def {} bt rssi".format(wf, dev_wf_rssi))
         print("-----------------------------------------------------------")
         create_hist(wf, server.rssi_wf[wf], std_wf_rssi, mean_wf_rssi, median_wf_rssi)
+        np.save(wf, server.rssi_wf[wf])
 if __name__ == "__main__":
     main()

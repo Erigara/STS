@@ -23,13 +23,15 @@ class WebReqHandler:
                         "login"    : self.login,
                         "logout"   : self.logout,
                         "get_data" : self.get_data,
-                        "delete_data" : self.delete_data
+                        "get_column" : self.get_column,
+                        "delete_data" : self.delete_data,
+                        "modify_data" : self.modify_data,
+                        "add_data" : self.add_data
                         }
         return  self
     async def raise_warning(self, data):
         print("Get event")
-        await self.post_event({"header" : "raise_warning",
-                               "data"   : data})
+        await self.post_event(data)
     async def push_position(self, data):
         print("Get event")
         await self.post_event({"header" : "push_position",
@@ -125,6 +127,34 @@ class WebReqHandler:
                            )
         columns = [{'title' : column["COLUMN_COMMENT"], 'field' : column["COLUMN_NAME"]} for column in columns]
         return {"header" : "get_data", "data" : {'columns' : columns, 'tabledata' : tabledata}}
+    
+    async def modify_data(self, table, row):
+        await self.db.update_record(table, row)
+        return {"header" : "modify_data", "data" : {'success': True}}
+    
+    async def add_data(self, table, row):
+        await self.db.insert_record(table, row)
+        where_condition = " AND ".join(['{} = {!r}'.format(key, row[key]).replace("'", '"') for key in row if row[key] != '' and row[key] != 'None'])
+        row = await (db_module.ReadRecord(self.db)
+                                        .add_where(where_condition)
+                                        .execute(table=table, 
+                                                 columns=["*",],
+                                                 data=[]
+                                                 )
+                                        )
+        row = {key : str(row[-1][key]) for key in row[-1]}
+        return {"header" : "add_data", "data" : {'success': True, 'row': row}}
+    
+    async def get_column(self, table, column):
+        tabledata = await (db_module.ReadRecord(self.db)
+                                        .execute(table=table, 
+                                                 columns=[column,],
+                                                 data=[]
+                                                 )
+                           )
+        tabledata = [{key : str(row[key]) for key in row} for row in tabledata]
+        print(tabledata)
+        return {"header" : "get_column", "data" : {'column' : tabledata}}
     
     async def delete_data(self, table, rows):
         await self.db.delete_records(table, rows)

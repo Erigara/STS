@@ -30,8 +30,8 @@ def rssi_to_dist(rssi, benchmark_rssi):
 
 #X = np.linspace(1, 8, 100)
 #Y = abs(5*np.sin(X))
-x = random.randint(0,3)
-y = random.randint(0,5)
+x = random.randint(1,3)
+y = random.randint(1,5)
 X = [x for i in range(100)]
 Y = [y for i in range(100)]
 coords = [np.array([[x,],[y,]]) for x,y in ((0,0), (3,0), (0,5), (3,5))]
@@ -43,7 +43,7 @@ for subset in itertools.combinations(coords, 4):
     SM_RES = []
     for (x,y) in zip(X, Y):         
         dist =[find_dist(x,y, coord[0,0], coord[1,0]) for coord in subset]
-        rssi = [dist_to_rssi(d, -40)*random.normalvariate(1, 0.3**2) for d in dist]
+        rssi = [dist_to_rssi(d, -40)*random.normalvariate(1, 0.01**2) for d in dist]
         noisy_dist = [rssi_to_dist(r, -40) for r in rssi]
         
         ls_res = trilateration.ls_trilateration(subset, noisy_dist).flatten()

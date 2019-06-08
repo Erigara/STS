@@ -30,7 +30,7 @@ function appendToNotificationTray(div) {
 }
 
 function raise_warning(data) {
-    var message = `Сотрудник: ${data.security_id} отклонился от маршрута №${data.route_id} в ${data.time}`
+    var message = `Сотрудник: ${data.security_id} отклонился от маршрута №${data.route_id} в ${data.time}`;
     var notification = createNotification(message);
     appendToNotificationTray(notification);
 }
