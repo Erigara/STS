@@ -71,7 +71,7 @@ def wrap_to_thread(func):
 
 #%%%  Основные методы
 @wrap_to_thread
-def check_execution(route_id, security_id, check_point_id, begin_time, end_time):
+def check_execution(route_point_id, route_id, security_id, check_point_id, begin_time, end_time):
     """
     Запрашивает у сервера историю перемещений и устанавливает, выполнена ли точки.
     В случае невыполнения на сервер посылается warning сообщение.
