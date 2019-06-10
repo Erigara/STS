@@ -23,7 +23,7 @@ function openConnection() {
     setTimeout(() => openConnection(), reconnectionTime);
   };
 
-  wsocket.socket.onmessage = function(event) {
+ wsocket.socket.onmessage = function(event) {
     var message = JSON.parse(event.data);
     console.log(message);
     var header = message['header']
@@ -38,9 +38,6 @@ function openConnection() {
     });
   };
 }
-
-
-
 
 
 wsocket.sendRequest = function(header, data) {

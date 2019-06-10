@@ -85,8 +85,7 @@ class RTSLReqHandler:
             rssi = signals[sensor_id]
             x, y = await self.get_sensor_coords(sensor_id)
             benchmark_rssi = await self.get_benchmark_rssi(sensor_id)
-            benchmark_rssi_std = await self.get_benchmark_rssi_std(sensor_id)
-            dist = await self.find_distance(rssi, benchmark_rssi)
+            dist = await self.find_distance_poly(rssi, benchmark_rssi)
             print('{} position {} dist {} m'.format(sensor_id, (x,y),dist))
             coords.append(np.array((x, y)).reshape(2,1))
             distances.append(dist)
@@ -187,7 +186,7 @@ class RTSLReqHandler:
             raise UserWarning((0, "Sensor not found"))
         return benchmark_rssi
     
-    async def find_distance(self, rssi, benchmark_rssi, benchmark_rssi_std=None):
+    async def find_distance(self, rssi, benchmark_rssi):
         """
         Находит расстояние от устройства до датчика на основе формулы передачи Фрииса.
         rssi : int  - уровень сингала
@@ -195,16 +194,27 @@ class RTSLReqHandler:
         
         return dist : float
         """
-        if benchmark_rssi_std:
-            n = 0.5
-            benchmark_dist = 1
-            delta_rssi = rssi - benchmark_rssi
-            dist = benchmark_dist*10**(-(benchmark_rssi_std + delta_rssi)/(10*n))
-        else:
-            n = 0.94
-            benchmark_dist = 1
-            delta_rssi = rssi - benchmark_rssi
-            dist = benchmark_dist*10**(-delta_rssi/(10*n))
+        n = 0.94
+        benchmark_dist = 1
+        delta_rssi = rssi - benchmark_rssi
+        dist = benchmark_dist*10**(-delta_rssi/(10*n))
+        return dist
+    
+    async def find_distance_poly(self, rssi, benchmark_rssi):
+        """
+        Находит расстояние от устройства до датчика на основе формулы передачи Фрииса.
+        rssi : int  - уровень сингала
+        benchmark_rssi : int - эталонный уровень сигнала
+        
+        return dist : float
+        """
+        deg = 3
+        coef = [-1.46303883e-04,  1.18935211e-04,  1.63136522e-01,  2.47115842e+00]
+        dist = 0
+        delta_rssi = rssi - benchmark_rssi  
+        for i in range(deg+1):
+            add = (-delta_rssi)**(deg-i)*coef[i]
+            dist = dist + add
         return dist
     
     async def  multilateration(self, coords, distances):
@@ -215,7 +225,7 @@ class RTSLReqHandler:
         return coords : (x : float, y : float)
         """
         import trilateration
-        return trilateration.ls_trilateration(coords, distances, method='sm', eps=0.01, rate=1)
+        return trilateration.ls_trilateration(coords, distances, method='nlls')
         
     async def map_check_points(self, position):
         """
