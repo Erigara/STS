@@ -26,7 +26,9 @@ def update_plot(x,y):
     
 def find_dist(x,y, x_, y_):
     return ((x-x_)**2+(y-y_)**2)**0.5
+
 async def run():
+    alpha = 0.2
     req =  await (RTSLReqHandler.create(None))
     fig, ax = create_plot()
     
@@ -47,7 +49,7 @@ async def run():
    
     results = []
     for i in range(1000):
-        err_dist = [rad+random.normalvariate(0, 0.1*rad) for rad in dist]
+        err_dist = [rad*random.normalvariate(1, alpha) for rad in dist]
         result = await req.multilateration(coords, err_dist)
         result = result.flatten()
         results.append(result)

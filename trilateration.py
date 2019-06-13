@@ -6,7 +6,46 @@ Created on Sat May 18 18:52:59 2019
 @author: erigara
 """
 import numpy as np
+import pickle
 from scipy.optimize import least_squares
+
+
+def find_distance_nn(rssi, benchmark_rssi, std_rssi):
+    model = pickle.load(open('./model/nn_model', 'rb'))
+    dist = model.predict(np.array([rssi, benchmark_rssi, std_rssi]).reshape(1, -1))[0]
+    return dist
+
+def find_distance_poly(rssi, benchmark_rssi):
+        """
+        Находит расстояние от устройства до датчика на основе формулы передачи Фрииса.
+        rssi : int  - уровень сингала
+        benchmark_rssi : int - эталонный уровень сигнала
+        
+        return dist : float
+        """
+        deg = 3
+        coef = [-1.46303883e-04,  1.18935211e-04,  1.63136522e-01,  2.47115842e+00]
+        dist = 0
+        delta_rssi = rssi - benchmark_rssi  
+        for i in range(deg+1):
+            add = (-delta_rssi)**(deg-i)*coef[i]
+            dist = dist + add
+        return dist
+    
+def find_distance(rssi, benchmark_rssi):
+        """
+        Находит расстояние от устройства до датчика на основе формулы передачи Фрииса.
+        rssi : int  - уровень сингала
+        benchmark_rssi : int - эталонный уровень сигнала
+        
+        return dist : float
+        """
+        n = 2
+        #n = 0.94
+        benchmark_dist = 1
+        delta_rssi = rssi - benchmark_rssi
+        dist = benchmark_dist*10**(-delta_rssi/(10*n))
+        return dist
 
 def naive_trilateration(coords, distances):
         """
@@ -36,51 +75,63 @@ def naive_trilateration(coords, distances):
     
 
 
-def optimizer(coords, distances):
-    flat_dist = distances.flatten()
+def nlls_trilateration(coords, distances, X=None):
+    def optimizer(coords, distances):
+        flat_dist = distances.flatten()
     
-    def equations( guess ):
-            x, y = guess
-            residuals = np.diag((coords-guess) @ (coords-guess).T).flatten() - flat_dist 
+        def equations( guess ):
+            residuals = np.sqrt(np.diag((coords-guess) @ (coords-guess).T)).flatten() - flat_dist
             return residuals
-    return equations
+        return equations
 
-def nonlinear_ls_optimization(X, coords, distances):
-    original_shape = X.shape
-    X = X.flatten()
+
+    N = len(coords)
+    distances = np.array(distances).reshape(N,1)
+    coords = np.array([coord.flatten() for coord in coords])
+    dim = coords.shape[1]
+    shape = (dim, 1)
+    if X:
+        X = X.flatten()
+    else:  
+        X = np.mean(coords, axis=0)
+    
     eq = optimizer(coords, distances)
     X = np.array(least_squares(eq, X, method='lm').x)
-    X = X.reshape(original_shape)
+    X = X.reshape(shape)
     return X
 
-def spring_mass_optimization(X, coords, distances, eps=1, rate=1):
-    original_shape = X.shape
-    X = X.flatten()
-    X_prev = np.zeros_like(X)
+def sm_trilateration(coords, distances, X=None):
+    def optimizer(coords, distances):
+        def equations( guess ):
+            U = coords - guess
+            D = np.diag(U @ U.T).reshape(distances.shape)
+            D = np.sqrt(D).reshape(distances.shape)
+            U = U / D
+            F = (D - distances) * U
+            F = np.sum(F, axis = 0)
+            residuals = F
+            return residuals
+        return equations
+
+
+    N = len(coords)
+    distances = np.array(distances).reshape(N,1)
+    coords = np.array([coord.flatten() for coord in coords])
+    dim = coords.shape[1]
+    shape = (dim, 1)
+    if X:
+        X = X.flatten()
+    else:  
+        X = np.mean(coords, axis=0)
+        
+    eq = optimizer(coords, distances)
+    X = np.array(least_squares(eq, X, method='lm').x)
+    X = X.reshape(shape)
+    return X
     
-    diff = np.linalg.norm(X_prev - X)
-    while diff > eps:
-        U = coords - X
-        D = np.diag(U @ U.T).reshape(distances.shape)
-        D = np.sqrt(D).reshape(distances.shape)
-        U = U / D
-        F = (distances - D) * U
-        F = np.sum(F, axis = 0)
-        X_prev = X
-        X = X - rate*F
-        rate *= 0.99
-        diff = np.linalg.norm(X_prev - X)
-    if np.nan in X:
-        return None
-    else:
-        X = X.reshape(original_shape)
-        return X
-def no_optimization(X, coords, distances):
-    return X
 
-methods_ = {"sm" : spring_mass_optimization, "nlls": nonlinear_ls_optimization, None : no_optimization}
-
-def ls_trilateration(coords, distances, method=None, **kwargs):
+def ls_trilateration(coords, distances):
+    
     N = len(coords)
     distances = np.array(distances).reshape(N,1)
     coords = np.array([coord.flatten() for coord in coords])
@@ -106,10 +157,6 @@ def ls_trilateration(coords, distances, method=None, **kwargs):
     
     try:
         X = np.linalg.solve(A.T @ A, ATb)
-        #Оптимизация результата
-        
-        # Обернуть в функцию постпроцессинга
-        X = methods_[method](X, coords, distances, **kwargs)
         # Обратное преобразование координат
         X = U*X
         X = np.linalg.solve(R, X)
