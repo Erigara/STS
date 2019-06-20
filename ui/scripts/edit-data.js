@@ -152,14 +152,18 @@ function addRow() {
   let row = addTable.getRows()[0];
   let rowData = row.getData();
   let isValid = true;
-  // не учитывает незаполняемые поля id;
   let i = 0;
+  let empty = 0;
   for (key in rowData) {
       if(!rowData[key] && i != 0) {
-          isValid = false;
+          empty += 1;
       }
       i += 1;
   }
+  if (empty > 1) {
+    isValid = false;
+  }
+
   if(isValid) {
     wsocket.promiseSubscribe("add_data").then(
       function(data){

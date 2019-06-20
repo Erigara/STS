@@ -3,7 +3,7 @@ const radius = 3;
 var svg;
 var xScale;
 var yScale;
-var colors = d3.scaleSequential().domain([0,20])
+var colors = d3.scaleSequential().domain([0,3])
                 .interpolator(d3.interpolateViridis);
 
 function startMonitoring() {
